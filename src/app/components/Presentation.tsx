@@ -1,3 +1,10 @@
+import { useCopilotContext } from "@copilotkit/react-core";
+import { CopilotTask } from "@copilotkit/react-core";
+import {
+  useMakeCopilotActionable,
+  useMakeCopilotReadable
+} from "@copilotkit/react-core";
+
 "use client";
 
 import { useCallback, useMemo, useState } from "react";
@@ -63,6 +70,10 @@ export const Presentation = () => {
     [currentSlideIndex, setSlides] // Dependencies for useCallback.
   );
 
+  useMakeCopilotReadable("These are all the slides: " + JSON.stringify(slides));
+  useMakeCopilotReadable(
+    "This is the current slide: " + JSON.stringify(currentSlide)
+  );
   // The JSX structure for the Presentation component.
   return (
     <div className="relative">
