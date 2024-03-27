@@ -2,10 +2,10 @@ import { useCopilotContext } from "@copilotkit/react-core";
 import { CopilotTask } from "@copilotkit/react-core";
 import {
   useMakeCopilotActionable,
-  useMakeCopilotReadable
+  useMakeCopilotReadable,
 } from "@copilotkit/react-core";
 
-"use client";
+("use client");
 
 import { useCallback, useMemo, useState } from "react";
 import {
@@ -47,7 +47,7 @@ export const Presentation = () => {
   const [slides, setSlides] = useState<SlideModel[]>([
     {
       title: `Welcome to our presentation!`, // Title of the first slide.
-      content: 'This is the first slide.', // Content of the first slide.
+      content: "This is the first slide.", // Content of the first slide.
       backgroundImageDescription: "hello", // Description for background image retrieval.
       spokenNarration: "This is the first slide. Welcome to our presentation!", // Spoken narration text for the first slide.
     },
@@ -55,7 +55,10 @@ export const Presentation = () => {
   const [currentSlideIndex, setCurrentSlideIndex] = useState(0); // Current slide index, starting at 0.
 
   // Use useMemo to memoize the current slide object to avoid unnecessary recalculations.
-  const currentSlide = useMemo(() => slides[currentSlideIndex], [slides, currentSlideIndex]);
+  const currentSlide = useMemo(
+    () => slides[currentSlideIndex],
+    [slides, currentSlideIndex]
+  );
 
   // Define a function to update the current slide. This function uses useCallback to memoize itself to prevent unnecessary re-creations.
   const updateCurrentSlide = useCallback(
@@ -74,95 +77,175 @@ export const Presentation = () => {
   useMakeCopilotReadable(
     "This is the current slide: " + JSON.stringify(currentSlide)
   );
+
+  useMakeCopilotActionable(
+    {
+      // Defines the action's metadata.
+      name: "appendSlide", // Action identifier.
+      description:
+        "Add a slide after all the existing slides. Call this function multiple times to add multiple slides.",
+      // Specifies the arguments that the action takes, including their types, descriptions, and if they are required.
+      argumentAnnotations: [
+        {
+          name: "title", // The title of the new slide.
+          type: "string",
+          description: "The title of the slide. Should be a few words long.",
+          required: true,
+        },
+        {
+          name: "content", // The main content or body of the new slide.
+          type: "string",
+          description:
+            "The content of the slide. Should generally consist of a few bullet points.",
+          required: true,
+        },
+        {
+          name: "backgroundImageDescription", // Description for fetching or generating the background image of the new slide.
+          type: "string",
+          description:
+            "What to display in the background of the slide. For example, 'dog', 'house', etc.",
+          required: true,
+        },
+        {
+          name: "spokenNarration", // Narration text that will be read aloud during the presentation of the slide.
+          type: "string",
+          description:
+            "The text to read while presenting the slide. Should be distinct from the slide's content, and can include additional context, references, etc. Will be read aloud as-is. Should be a few sentences long, clear, and smooth to read.",
+          required: true,
+        },
+      ],
+      // The function to execute when the action is triggered. It creates a new slide with the provided details and appends it to the existing slides array.
+      implementation: async (
+        title,
+        content,
+        backgroundImageDescription,
+        spokenNarration
+      ) => {
+        const newSlide: SlideModel = {
+          // Constructs the new slide object.
+          title,
+          content,
+          backgroundImageDescription,
+          spokenNarration,
+        };
+
+        // Updates the slides state by appending the new slide to the end of the current slides array.
+        setSlides((slides) => [...slides, newSlide]);
+      },
+    },
+    [setSlides] // Dependency array for the hook. This action is dependent on the `setSlides` function, ensuring it reinitializes if `setSlides` changes.
+  );
+
+  const context = useCopilotContext();
+
+  const generateSlideTask = new CopilotTask({
+    instructions:
+      "Make the next slide related to the overall topic of the presentation. It will be inserted after the current slide. Do NOT carry any research",
+  });
+
+  const [generateSlideTaskRunning, setGenerateSlideTaskRunning] =
+    useState(false);
+
+    
   // The JSX structure for the Presentation component.
   return (
     <div className="relative">
-      {/* Render the current slide by passing the currentSlide and updateCurrentSlide function as props. */}
+      {/* Renders the current slide using a Slide component with props for the slide data and a method to update it. */}
       <Slide slide={currentSlide} partialUpdateSlide={updateCurrentSlide} />
 
-      {/* Container for action buttons located at the top-left corner of the screen. */}
+      {/* Container for action buttons positioned at the top left corner of the relative parent */}
       <div className="absolute top-0 left-0 mt-6 ml-4 z-30">
-        {/* Action button to add a new slide. Disabled state is hardcoded to true for demonstration. */}
+        {/* ActionButton to add a new slide. It is disabled when a generateSlideTask is running to prevent concurrent modifications. */}
         <ActionButton
-          disabled={true} 
+          disabled={generateSlideTaskRunning}
           onClick={() => {
-            // Define a new slide object.
             const newSlide: SlideModel = {
               title: "Title",
               content: "Body",
               backgroundImageDescription: "random",
               spokenNarration: "The speaker's notes for this slide.",
             };
-            // Update the slides array to include the new slide.
+            // Inserts the new slide immediately after the current slide and updates the slide index to point to the new slide.
             setSlides((slides) => [
               ...slides.slice(0, currentSlideIndex + 1),
               newSlide,
               ...slides.slice(currentSlideIndex + 1),
             ]);
-            // Move to the new slide by updating the currentSlideIndex.
             setCurrentSlideIndex((i) => i + 1);
           }}
           className="rounded-r-none"
         >
-          <PlusIcon className="h-6 w-6" /> {/* Icon for the button. */}
+          <PlusIcon className="h-6 w-6" />
         </ActionButton>
 
-        {/* Another action button, currently disabled and without functionality. */}
+        {/* ActionButton to generate a new slide based on the current context, also disabled during task running. */}
         <ActionButton
-          disabled={true} 
-          onClick={async () => { }} // Placeholder async function.
+          disabled={generateSlideTaskRunning}
+          onClick={async () => {
+            setGenerateSlideTaskRunning(true); // Indicates the task is starting.
+            await generateSlideTask.run(context); // Executes the task with the current context.
+            setGenerateSlideTaskRunning(false); // Resets the flag when the task is complete.
+          }}
           className="rounded-l-none ml-[1px]"
         >
-          <SparklesIcon className="h-6 w-6" /> {/* Icon for the button. */}
+          <SparklesIcon className="h-6 w-6" />
         </ActionButton>
       </div>
 
-      {/* Container for action buttons at the top-right corner for deleting slides, etc. */}
+      {/* Container for action buttons at the top right, including deleting the current slide and potentially other actions. */}
       <div className="absolute top-0 right-0 mt-6 mr-24">
+        {/* ActionButton for deleting the current slide, disabled if a task is running or only one slide remains. */}
         <ActionButton
-          disabled={slides.length === 1} // Disable button if there's only one slide.
-          onClick={() => {}} // Placeholder function for the button action.
+          disabled={generateSlideTaskRunning || slides.length === 1}
+          onClick={() => {
+            console.log("delete slide");
+            // Removes the current slide and resets the index to the beginning as a simple handling strategy.
+            setSlides((slides) => [
+              ...slides.slice(0, currentSlideIndex),
+              ...slides.slice(currentSlideIndex + 1),
+            ]);
+            setCurrentSlideIndex((i) => 0);
+          }}
           className="ml-5 rounded-r-none"
         >
-          <TrashIcon className="h-6 w-6" /> {/* Icon for the button. */}
+          <TrashIcon className="h-6 w-6" />
         </ActionButton>
       </div>
 
-      {/* Display current slide number and total slides at the bottom-right corner. */}
+      {/* Display showing the current slide index and the total number of slides. */}
       <div
         className="absolute bottom-0 right-0 mb-20 mx-24 text-xl"
         style={{
-          textShadow: "1px 1px 0 #ddd, -1px -1px 0 #ddd, 1px -1px 0 #ddd, -1px 1px 0 #ddd",
+          textShadow:
+            "1px 1px 0 #ddd, -1px -1px 0 #ddd, 1px -1px 0 #ddd, -1px 1px 0 #ddd",
         }}
       >
-        Slide {currentSlideIndex + 1} of {slides.length} {/* Current slide and total slides. */}
+        Slide {currentSlideIndex + 1} of {slides.length}
       </div>
 
-      {/* Container for navigation buttons (previous and next) at the bottom-right corner. */}
+      {/* Navigation buttons to move between slides, disabled based on the slide index or if a task is running. */}
       <div className="absolute bottom-0 right-0 mb-6 mx-24">
-        {/* Button to navigate to the previous slide. */}
+        {/* Button to move to the previous slide, disabled if on the first slide or a task is running. */}
         <ActionButton
           className="rounded-r-none"
-          disabled={
-            currentSlideIndex === 0 ||
-            true} // Example condition to disable button; 'true' is just for demonstration.
+          disabled={generateSlideTaskRunning || currentSlideIndex === 0}
           onClick={() => {
-            setCurrentSlideIndex((i) => i - 1); // Update currentSlideIndex to move to the previous slide.
+            setCurrentSlideIndex((i) => i - 1);
           }}
         >
-          <BackwardIcon className="h-6 w-6" /> {/* Icon for the button. */}
+          <BackwardIcon className="h-6 w-6" />
         </ActionButton>
-        {/* Button to navigate to the next slide. */}
+        {/* Button to move to the next slide, disabled if on the last slide or a task is running. */}
         <ActionButton
           className="mr-[1px] rounded-l-none"
           disabled={
-            true ||
-            currentSlideIndex + 1 === slides.length} // Example condition to disable button; 'true' is just for demonstration.
+            generateSlideTaskRunning || currentSlideIndex + 1 === slides.length
+          }
           onClick={async () => {
-            setCurrentSlideIndex((i) => i + 1); // Update currentSlideIndex to move to the next slide.
+            setCurrentSlideIndex((i) => i + 1);
           }}
         >
-          <ForwardIcon className="h-6 w-6" /> {/* Icon for the button. */}
+          <ForwardIcon className="h-6 w-6" />
         </ActionButton>
       </div>
     </div>
