@@ -1,3 +1,5 @@
+"use client";
+
 import { useCopilotContext } from "@copilotkit/react-core";
 import { CopilotTask } from "@copilotkit/react-core";
 import {
@@ -5,7 +7,7 @@ import {
   useMakeCopilotReadable,
 } from "@copilotkit/react-core";
 
-("use client");
+
 
 import { useCallback, useMemo, useState } from "react";
 import {
