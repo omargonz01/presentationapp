@@ -7,8 +7,6 @@ import {
   useMakeCopilotReadable,
 } from "@copilotkit/react-core";
 
-
-
 import { useCallback, useMemo, useState } from "react";
 import {
   BackwardIcon,
@@ -51,7 +49,7 @@ export const Presentation = () => {
       title: `Welcome to our presentation!`, // Title of the first slide.
       content: "This is the first slide.", // Content of the first slide.
       backgroundImageDescription: "hello", // Description for background image retrieval.
-      spokenNarration: "This is the first slide. Welcome to our presentation!", // Spoken narration text for the first slide.
+      spokenNarration: "This is the first slide. Welcome to your presentation!", // Spoken narration text for the first slide.
     },
   ]);
   const [currentSlideIndex, setCurrentSlideIndex] = useState(0); // Current slide index, starting at 0.
@@ -148,7 +146,6 @@ export const Presentation = () => {
   const [generateSlideTaskRunning, setGenerateSlideTaskRunning] =
     useState(false);
 
-    
   // The JSX structure for the Presentation component.
   return (
     <div className="relative">

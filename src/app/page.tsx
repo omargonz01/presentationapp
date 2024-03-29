@@ -23,7 +23,7 @@ export default function AIPresentation() {
         labels={{
           title: "Presentation Copilot",
           initial:
-            "Hi you! 👋 I can help you create a presentation on any topic.",
+            "Hello! 👋 I can help you create a presentation on any topic. Please choose a topic for me to write your presentation :)",
         }}
         clickOutsideToClose={false}
       >
